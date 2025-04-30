@@ -41,24 +41,36 @@ function SignUpPage() {
       const response = await axios.post('http://localhost:5000/api/auth/signup', formData);
 
       if (response.status === 200) {
-        setSnackbar({ open: true, message: "Sign Up successful! Redirecting to Sign In page..." });
-      } else if (response.status === 409) {
-        setSnackbar({ open: true, message: response.data.message || "User already exists!"});
+        // Store user data and token
+        const userData = {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          username: response.data.user.username,
+          role: response.data.user.role
+        };
+        
+        // Store token for possible direct login
+        localStorage.setItem('token', response.data.token);
+        
+        // Show success message
+        setSnackbar({ 
+          open: true, 
+          message: response.data.message || "Sign Up successful! Redirecting to Sign In page..." 
+        });
+        
+        setTimeout(() => {
+          navigate('/signin');
+        }, 3000);
       }
-
-      setLoading(false);
-
-      setTimeout(() => {
-        navigate('/signin');
-      }, 3000);
     } catch (err) {
+      // Display error message based on response
+      const errorMessage = err.response?.data?.message || 'Sign Up failed. Please try again.';
+      setError(errorMessage);
+      console.error('Error during sign-up:', err.response ? err.response.data : err.message);
+    } finally {
       setLoading(false);
-    // Display error message based on response
-    const errorMessage = err.response ? err.response.data.message : 'Sign Up failed. Please try again.';
-    setError(errorMessage);
-    console.error('Error during sign-up:', err.response ? err.response.data : err.message);
     }
-    };
+  };
 
   return (
     <React.Fragment>
@@ -135,9 +147,9 @@ function SignUpPage() {
                   onChange={handleChange}
                   label="Role"
                 >
-                  <MenuItem value="Member">Member</MenuItem>
-                  <MenuItem value="Staff">Staff</MenuItem>
-                  <MenuItem value="Administrator">Administrator</MenuItem>
+                  <MenuItem value="member">Member</MenuItem>
+                  <MenuItem value="staff">Staff</MenuItem>
+                  <MenuItem value="admin">Administrator</MenuItem>
                 </Select>
               </FormControl>
               <Button

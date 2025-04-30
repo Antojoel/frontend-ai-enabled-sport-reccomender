@@ -33,15 +33,25 @@ function SignInPage() {
       const response = await axios.post('http://localhost:5000/api/auth/signin', formData);
 
       if (response.status === 200) {
-        const userData = { email: formData.email, userName: response.data.userName, role: response.data.role };
+        // Store user data and token from response
+        const userData = {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          username: response.data.user.username,
+          role: response.data.user.role
+        };
+        
+        // Store token in localStorage
+        localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(userData));
         setOpenSnackbar(true);
 
         setTimeout(() => {
-          if (response.data.role === 'Staff') {
-            navigate('/staffDashboard');
-          } else if (response.data.role === 'Administrator') {
+          // Navigate based on user role
+          if (userData.role.toLowerCase() === 'admin' || userData.role.toLowerCase() === 'administrator') {
             navigate('/adminDashboard');
+          } else if (userData.role.toLowerCase() === 'staff') {
+            navigate('/staffDashboard');
           } else {
             navigate('/dashboard');
           }
@@ -49,8 +59,11 @@ function SignInPage() {
       }
     } catch (err) {
       setLoading(false);
-      setError('Invalid credentials or role. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Invalid credentials or role. Please try again.';
+      setError(errorMessage);
       console.error('Sign-in error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -118,9 +131,9 @@ function SignInPage() {
                   onChange={handleChange}
                   label="Role"
                 >
-                  <MenuItem value="Member">Member</MenuItem>
-                  <MenuItem value="Staff">Staff</MenuItem>
-                  <MenuItem value="Administrator">Administrator</MenuItem>
+                  <MenuItem value="member">Member</MenuItem>
+                  <MenuItem value="staff">Staff</MenuItem>
+                  <MenuItem value="admin">Administrator</MenuItem>
                 </Select>
               </FormControl>
               <Button
